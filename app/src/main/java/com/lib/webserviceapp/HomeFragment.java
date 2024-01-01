@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,11 +27,11 @@ import org.json.JSONObject;
 //Sec - 2
 //My Application is about Free-To-Paly Games, get Data from 2 API,
 //Find the original link to the user's favorite game in the fastest way
-//
+//Find Free Givaways based in Platform
 public class HomeFragment extends Fragment {
-    private final String url = "https://www.freetogame.com/api/games"; //first Web Service API
-    private final String url2 = "https://www.freetogame.com/api/games"; //Second Web Service API
-
+    private final String url = "https://www.freetogame.com/api/games"; //first Web Service API for free games
+    private final String url2 = "https://www.gamerpower.com/api/giveaways"; //Second Web Service API for free Giveaways
+    private Spinner spinnerPlatform;
     private RequestQueue queue;
     public HomeFragment() {
     }
