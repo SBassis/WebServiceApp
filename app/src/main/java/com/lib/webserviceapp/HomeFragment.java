@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -22,6 +23,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 //Sally Bassis - 1191958
 //Sec - 2
@@ -32,31 +36,38 @@ public class HomeFragment extends Fragment {
     private final String url = "https://www.freetogame.com/api/games"; //first Web Service API for free games
     private final String url2 = "https://www.gamerpower.com/api/giveaways"; //Second Web Service API for free Giveaways
     private Spinner spinnerPlatform;
+    private TextView giveawayTxtResult;
     private RequestQueue queue;
     public HomeFragment() {
     }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_home_fragment, container, false);
         queue = Volley.newRequestQueue(requireActivity());
+
+        spinnerPlatform = view.findViewById(R.id.spinnerPlatform);
+        giveawayTxtResult = view.findViewById(R.id.txtGiveaway);
+        setupPlatformSpinner();
         view.findViewById(R.id.btnFind).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 fetchData();
             }
         });
-        return view;
-    }
-    private void fetchData() {
-        // Assuming you have an EditText for the user to enter the title with the ID edtTitle
-        EditText edtTitle = requireView().findViewById(R.id.edtTitle);
+        view.findViewById(R.id.btnSearchGiveaways).setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            searchGiveaways();
+        }
+    });
 
-        // Get the title entered by the user
+        return view;
+}
+    private void fetchData() {
+        EditText edtTitle = requireView().findViewById(R.id.edtTitle);
         String userEnteredTitle = edtTitle.getText().toString().trim();
         if (!userEnteredTitle.isEmpty()) {
-            //request
             JsonArrayRequest jsonRequest = new JsonArrayRequest(Request.Method.GET, url, null,
                     new Response.Listener<JSONArray>() {
                         @Override
@@ -91,7 +102,7 @@ public class HomeFragment extends Fragment {
             });
             queue.add(jsonRequest);
         } else {
-            // If the entered title is empty, display a message
+            // If empty
             displayGameUrl("Please enter a title!");
         }
     }
@@ -99,5 +110,56 @@ public class HomeFragment extends Fragment {
         EditText edtResult = requireView().findViewById(R.id.edtResult);
         edtResult.setVisibility(View.VISIBLE);
         edtResult.setText(gameUrl);
+    }
+    private void setupPlatformSpinner() {
+        List<String> platforms = new ArrayList<>();
+        platforms.add("PC");
+        platforms.add("Android");
+        platforms.add("OS");
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_spinner_item, platforms);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPlatform.setAdapter(adapter);
+    }
+    private void searchGiveaways() {
+        String selectedPlatform = spinnerPlatform.getSelectedItem().toString();
+        JsonArrayRequest jsonRequest = new JsonArrayRequest(Request.Method.GET, url2, null,
+                new Response.Listener<JSONArray>() {
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        try {
+                            StringBuilder giveawayText = new StringBuilder();
+                            for (int i = 0; i < response.length(); i++) {
+                                JSONObject giveawayObj = response.getJSONObject(i);
+
+                                String title = giveawayObj.getString("title");
+                                String openGiveawayUrl = giveawayObj.getString("open_giveaway_url");
+                                String platforms = giveawayObj.getString("platforms");
+
+                                if (platforms.contains(selectedPlatform)) {
+                                    giveawayText.append("Title: ").append(title).append("\n")
+                                            .append("URL: ").append(openGiveawayUrl).append("\n\n");
+                                }
+                            }
+
+                            if (giveawayText.length() > 0) {
+                                // Display giveaway titles and URLs in the result EditText
+                                giveawayTxtResult.setVisibility(View.VISIBLE);
+                                giveawayTxtResult.setText(giveawayText.toString());
+                            } else {
+                                giveawayTxtResult.setVisibility(View.VISIBLE);
+                                giveawayTxtResult.setText("No giveaways found for the selected platform.");
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(requireActivity(), error.toString(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        queue.add(jsonRequest);
     }
 }
