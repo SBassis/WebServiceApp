@@ -30,44 +30,44 @@ public class LoginMainActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.login_button);
         rememberMe = findViewById(R.id.rememberMeCheckbox);
         toSignupTxt = findViewById(R.id.tosignuptxt);
+        // Check if remembered data is passed from the ProfileFragment
+        String rememberedUsername = getIntent().getStringExtra("username");
+        String rememberedPassword = getIntent().getStringExtra("password");
 
-        if (isLoggedIn()) {
+        if (rememberedUsername != null && rememberedPassword != null) {
+            // Fill the login fields with remembered data
+            UsernameEditTxt.setText(rememberedUsername);
+            PasswordEditTxt.setText(rememberedPassword);
+        }
+
+        if (isLoggedIn()) { //if true
             Intent intent = new Intent(LoginMainActivity.this, HomeActivity.class);
             startActivity(intent);
             finish();
         }
-        // Load saved credentials if "Remember Me" is checked
-        if (rememberMe.isChecked()) {
-            loadSavedCredentials();
-        }
-
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String enteredUsername = UsernameEditTxt.getText().toString();
                 String enteredPassword = PasswordEditTxt.getText().toString();
 
-                // Retrieve saved user data from SharedPreferences
                 String savedUsername = getUserData("username");
                 String savedPassword = getUserData("password");
 
-                // Check if entered credentials match saved credentials
                 if (enteredUsername.equals(savedUsername) && enteredPassword.equals(savedPassword)) {
-                    // Login successful
+                    //successful
                     String message = "Login successful";
                     Toast.makeText(LoginMainActivity.this, message, Toast.LENGTH_SHORT).show();
-
-                    // Save credentials if "Remember Me" is checked
-                    if (rememberMe.isChecked()) {
-                        saveCredentials(enteredUsername, enteredPassword);
-                    }
                     setLoggedIn(true);
+                    if (rememberMe.isChecked()) {
+                        //Save the user if "Remember Me" is checked
+                        RememberTheUser(enteredUsername, enteredPassword);
+                    }
                     Intent intent = new Intent(LoginMainActivity.this, HomeActivity.class);
                     startActivity(intent);
                     finish();
                 } else {
-                    // Login failed
-                    String message = "Login failed. Please check your credentials.";
+                    String message = "failed, Please check your Information.";
                     Toast.makeText(LoginMainActivity.this, message, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -75,21 +75,17 @@ public class LoginMainActivity extends AppCompatActivity {
         toSignupTxt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Navigate to the SignupActivity
                 Intent intent = new Intent(LoginMainActivity.this, Signup.class);
                 startActivity(intent);
             }
         });
-
     }
     private boolean isLoggedIn() {
-        // Retrieve the login status from SharedPreferences
         SharedPreferences sharedPreferences = getSharedPreferences("UserData", MODE_PRIVATE);
         return sharedPreferences.getBoolean("isLoggedIn", false);
     }
 
     private void setLoggedIn(boolean isLoggedIn) {
-        // Save the login status to SharedPreferences
         SharedPreferences sharedPreferences = getSharedPreferences("UserData", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("isLoggedIn", isLoggedIn);
@@ -100,22 +96,12 @@ public class LoginMainActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("UserData", MODE_PRIVATE);
         return sharedPreferences.getString(key, "");
     }
-
-    private void saveCredentials(String username, String password) {
-        SharedPreferences sharedPreferences = getSharedPreferences("RememberMeData", MODE_PRIVATE);
+    private void RememberTheUser(String username, String password) {
+        SharedPreferences sharedPreferences = getSharedPreferences("UserData", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("rememberedUsername", username);
         editor.putString("rememberedPassword", password);
         editor.apply();
     }
 
-    private void loadSavedCredentials() {
-        SharedPreferences sharedPreferences = getSharedPreferences("RememberMeData", MODE_PRIVATE);
-        String rememberedUsername = sharedPreferences.getString("rememberedUsername", "");
-        String rememberedPassword = sharedPreferences.getString("rememberedPassword", "");
-
-        // Set the saved credentials in the EditText fields
-        UsernameEditTxt.setText(rememberedUsername);
-        PasswordEditTxt.setText(rememberedPassword);
-    }
 }

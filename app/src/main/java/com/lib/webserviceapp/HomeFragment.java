@@ -1,5 +1,7 @@
 package com.lib.webserviceapp;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,6 +40,9 @@ public class HomeFragment extends Fragment {
     private Spinner spinnerPlatform;
     private TextView giveawayTxtResult;
     private RequestQueue queue;
+    EditText URLResult;
+    private String lastResult;
+    SharedPreferences myPrefs;
     public HomeFragment() {
     }
     @Override
@@ -46,9 +51,20 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.activity_home_fragment, container, false);
         queue = Volley.newRequestQueue(requireActivity());
 
+        myPrefs = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        URLResult = view.findViewById(R.id.edtResult);
+
+        if (savedInstanceState != null) {
+            lastResult = savedInstanceState.getString("lastResult", "");
+            URLResult.setText(lastResult);
+        }
+
+        //URLResult = requireView().findViewById(R.id.edtResult);
         spinnerPlatform = view.findViewById(R.id.spinnerPlatform);
         giveawayTxtResult = view.findViewById(R.id.txtGiveaway);
         setupPlatformSpinner();
+
+
         view.findViewById(R.id.btnFind).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -107,9 +123,10 @@ public class HomeFragment extends Fragment {
         }
     }
     private void displayGameUrl(String gameUrl) {
-        EditText edtResult = requireView().findViewById(R.id.edtResult);
-        edtResult.setVisibility(View.VISIBLE);
-        edtResult.setText(gameUrl);
+        lastResult = gameUrl;
+        URLResult.setVisibility(View.VISIBLE);
+        URLResult.setText(gameUrl);
+        saveResultToSharedPreferences();
     }
     private void setupPlatformSpinner() {
         List<String> platforms = new ArrayList<>();
@@ -119,6 +136,30 @@ public class HomeFragment extends Fragment {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_spinner_item, platforms);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerPlatform.setAdapter(adapter);
+    }
+    @Override
+    public void onPause() {
+        super.onPause();
+        //save the result when user leave the app ( paused)
+        saveResultToSharedPreferences();
+    }
+    public void onResume() {
+        super.onResume();
+        //retrieve the last saved result
+        lastResult = myPrefs.getString("lastResult", "");
+        URLResult.setText(lastResult);
+    }
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("lastResult", lastResult);
+    }
+
+    private void saveResultToSharedPreferences() {
+        // Save the URL result to SharedPreferences
+        SharedPreferences.Editor editor = myPrefs.edit();
+        editor.putString("lastResult", lastResult);
+        editor.commit();
     }
     private void searchGiveaways() {
         String selectedPlatform = spinnerPlatform.getSelectedItem().toString();
@@ -140,7 +181,6 @@ public class HomeFragment extends Fragment {
                                             .append("URL: ").append(openGiveawayUrl).append("\n\n");
                                 }
                             }
-
                             if (giveawayText.length() > 0) {
                                 // Display giveaway titles and URLs in the result EditText
                                 giveawayTxtResult.setVisibility(View.VISIBLE);
